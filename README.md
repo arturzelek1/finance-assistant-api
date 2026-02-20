@@ -30,10 +30,20 @@ A robust REST API for personal finance management, featuring intelligent spendin
 - **Identity Provider**: Keycloak
 - **Tooling**: Lombok, Maven, Docker & Docker Compose
 
-## 📊 Prediction Models (Strategy Pattern)
+## 📊 Forecasting Strategies
+The engine utilizes the Strategy Design Pattern for time-series modeling. Current strategies include:
 
-The application utilizes the **Strategy Design Pattern**, allowing for seamless addition of new algorithms. The active model is selected via a configuration key:
-`app.prediction-model=HOLT_WINTERS` (Available options: `OLS`, `HOLT_WINTERS`, `MOVING_AVERAGE`).
+`Holt-Winters (Double Exponential Smoothing)`: Best for data with trends; uses recursive Alpha/Beta smoothing.
+
+`Seasonal Persistence:` Predicts values based on the same month from the previous year.
+
+`Weighted Moving Average (WMA):` Recent months have a higher impact on the forecast.
+
+`Naive with Drift:` Baseline model that accounts for the average growth/decline over time.
+
+`OLS (Ordinary Least Squares):` Linear regression for detecting long-term historical trends.
+
+`Moving Average:` Simple arithmetic mean for stable, recurring expenses.
 
 
 
@@ -41,7 +51,6 @@ The application utilizes the **Strategy Design Pattern**, allowing for seamless 
 
 The project supports environment separation (Dev/Prod). In `application.properties`, you can define:
 - `app.environment`: Controls error detail level (returns full stack traces on `dev`).
-- **Statistical Parameters**: Fine-tune `ALPHA` and `BETA` for the Holt-Winters model without code changes.
 
 ## 🏗 Quick Start
 
