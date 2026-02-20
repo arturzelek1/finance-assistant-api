@@ -24,7 +24,7 @@ A robust REST API for personal finance management, featuring intelligent spendin
 ## 🛠 Tech Stack
 
 - **Language**: Java 21 (LTS)
-- **Framework**: Spring Boot 4.0.2 (Spring Web, Data JPA, Security, Redis, Actuator)
+- **Framework**: Spring Boot 4.0.3 (Spring Web, Data JPA, Security, Redis, Actuator)
 - **Database**: PostgreSQL 16
 - **Cache**: Redis
 - **Identity Provider**: Keycloak
