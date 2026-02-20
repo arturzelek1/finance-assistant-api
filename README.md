@@ -1,7 +1,7 @@
 # Finance Assistant API 📈
 
 [![Java 21](https://img.shields.io/badge/Java_21-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.2-6DB33F.svg?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-6DB33F.svg?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Hibernate](https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=Hibernate&logoColor=white)](https://hibernate.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Keycloak](https://img.shields.io/badge/Keycloak-26.0.0-EB5424?style=for-the-badge&logo=keycloak&logoColor=white)](https://www.keycloak.org/)
@@ -24,7 +24,7 @@ A robust REST API for personal finance management, featuring intelligent spendin
 ## 🛠 Tech Stack
 
 - **Language**: Java 21 (LTS)
-- **Framework**: Spring Boot 4.0.3 (Spring Web, Data JPA, Security, Redis, Actuator)
+- **Framework**: Spring Boot 3.3.5 (Spring Web, Data JPA, Security, Redis, Actuator)
 - **Database**: PostgreSQL 16
 - **Cache**: Redis
 - **Identity Provider**: Keycloak
