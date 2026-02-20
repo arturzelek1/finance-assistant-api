@@ -95,6 +95,14 @@ The API acts as an OAuth2 Resource Server. Ensure your `Authorization` header co
 ```HTTP
 Authorization: Bearer <YOUR_JWT_TOKEN>
 ```
+
+The API implements as the second layer of security the **Token Bucket algorithm** to protect the forecasting engine, which performs complex database aggregations and mathematical modeling.
+
+- **Mechanism**: Custom `OncePerRequestFilter` integrated into the Spring Security Filter Chain.
+- **Library**: [Bucket4j](https://bucket4j.com/).
+- **Policy**: 5 requests per minute per IP address for `/api/v1/predictions/**` endpoints.
+- **Response**: Returns `429 Too Many Requests` with a custom JSON error body when the limit is exceeded.
+
 ## 🧪 Testing & Monitoring
 Tests:
 
