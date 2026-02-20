@@ -2,12 +2,14 @@ package dev.artiz.financeassistantapi.strategy.strategies;
 
 import dev.artiz.financeassistantapi.dto.PredictionDTO;
 import dev.artiz.financeassistantapi.strategy.PredictionStrategy;
-import dev.artiz.financeassistantapi.model.Transaction;
 import dev.artiz.financeassistantapi.model.TransactionCategory;
 import dev.artiz.financeassistantapi.mappers.PredictionMapper;
+import dev.artiz.financeassistantapi.utils.PredictionValidator;
 import org.springframework.stereotype.Component;
 
+import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class HoltWintersStrategy implements PredictionStrategy {
@@ -16,17 +18,19 @@ public class HoltWintersStrategy implements PredictionStrategy {
     private static final double BETA = 0.2;
 
     @Override
-    public PredictionDTO.Prediction predictNextMonth(List<Transaction> history, TransactionCategory category) {
-        int n = history.size();
-        double level = history.get(0).getAmount().doubleValue();
-        double trend = history.get(1).getAmount().doubleValue() - history.get(0).getAmount().doubleValue();
+    public PredictionDTO.Prediction predictNextMonth(Map<YearMonth, Double> monthlyData, TransactionCategory category) {
+        List<Double> values = PredictionValidator.validateAndExtractValues(monthlyData, getModelName(), 3);
+
+        int n = values.size();
+        double level = values.get(0);
+        double trend = values.get(1) - values.get(0);
 
         double sumSquaredErrors = 0;
         double sumTotalSquares = 0;
-        double meanY = history.stream().mapToDouble(t -> t.getAmount().doubleValue()).average().orElse(0);
+        double meanY = values.stream().mapToDouble(Double::doubleValue).average().orElse(0);
 
         for (int i = 1; i < n; i++) {
-            double actual = history.get(i).getAmount().doubleValue();
+            double actual = values.get(i);
 
             // Before updating level/trend, we see what the model "guessed" for this step
             double forecastForThisStep = level + trend;

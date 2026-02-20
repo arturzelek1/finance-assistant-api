@@ -2,43 +2,28 @@ package dev.artiz.financeassistantapi.strategy.strategies;
 
 import dev.artiz.financeassistantapi.dto.PredictionDTO;
 import dev.artiz.financeassistantapi.strategy.PredictionStrategy;
-import dev.artiz.financeassistantapi.model.Transaction;
 import dev.artiz.financeassistantapi.model.TransactionCategory;
 import dev.artiz.financeassistantapi.mappers.PredictionMapper;
+import dev.artiz.financeassistantapi.utils.PredictionValidator;
 import org.springframework.stereotype.Component;
 
 import java.time.YearMonth;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 @Component
-public class OrdinaryLeastSquares implements PredictionStrategy {
+public class OrdinaryLeastSquaresStrategy implements PredictionStrategy {
     @Override
-    public PredictionDTO.Prediction predictNextMonth(List<Transaction> transactions, TransactionCategory category) {
-        Map<YearMonth, Double> monthlySums = transactions.stream()
-                .collect(Collectors.groupingBy(transaction ->
-                        YearMonth.from(transaction.getCreatedAt()),
-                        TreeMap::new,
-                        Collectors.summingDouble(transaction ->
-                                transaction.getAmount().doubleValue())
-                ));
+    public PredictionDTO.Prediction predictNextMonth(Map<YearMonth, Double> monthlyData, TransactionCategory category) {
+        List<Double> values = PredictionValidator.validateAndExtractValues(monthlyData, getModelName(), 3);
 
-        List<Double> monthlyValues = new ArrayList<>(monthlySums.values());
 
-        // A minimum of three data points is required to calculate a trend line
-        if (monthlyValues.size() < 3) {
-           throw new RuntimeException("Not enough data to run OLS regression");
-        }
-
-        int months = monthlyValues.size();
+        int months = values.size();
         double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
 
         // Accumulate statistics for the OLS estimation
         for (int i = 0; i < months; i++) {
-            double y = monthlyValues.get(i);
+            double y = values.get(i);
 
             sumX += i;                 // Time index (independent variable)
             sumY += y;                 // Amount (dependent variable)
@@ -55,7 +40,7 @@ public class OrdinaryLeastSquares implements PredictionStrategy {
         // Calculate predicted value for the next time period (n)
         double predictedValue = beta0 + beta1 * months;
         // Calculate model fit
-        double rSquare = calculateRSquare(monthlyValues, beta0, beta1);
+        double rSquare = calculateRSquare(values, beta0, beta1);
 
         return PredictionMapper.mapToDto(category, predictedValue, rSquare);
     }
