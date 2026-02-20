@@ -2,6 +2,7 @@ package dev.artiz.financeassistantapi.service;
 
 import dev.artiz.financeassistantapi.dto.PredictionDTO;
 import dev.artiz.financeassistantapi.exception.GlobalExceptionHandler;
+import dev.artiz.financeassistantapi.exception.InsufficientDataException;
 import dev.artiz.financeassistantapi.model.Prediction;
 import dev.artiz.financeassistantapi.model.Transaction;
 import dev.artiz.financeassistantapi.model.TransactionCategory;
@@ -31,7 +32,7 @@ public class PredictionService {
         List<Transaction> history = transactionRepository.findByCategoryOrderByCreatedAtAsc(category);
 
         if (history.size() < 3) {
-            throw new GlobalExceptionHandler.InsufficientDataException("Insufficient data for category: " + category);
+            throw new InsufficientDataException("Insufficient data for category: " + category);
         }
 
         Map<YearMonth, Double> monthlyData = history.stream()
