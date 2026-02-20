@@ -1,6 +1,5 @@
 package dev.artiz.financeassistantapi.utils;
 
-import dev.artiz.financeassistantapi.exception.GlobalExceptionHandler;
 import dev.artiz.financeassistantapi.exception.InsufficientDataException;
 
 import java.time.YearMonth;

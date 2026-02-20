@@ -1,7 +1,6 @@
 package dev.artiz.financeassistantapi.service;
 
 import dev.artiz.financeassistantapi.dto.PredictionDTO;
-import dev.artiz.financeassistantapi.exception.GlobalExceptionHandler;
 import dev.artiz.financeassistantapi.exception.InsufficientDataException;
 import dev.artiz.financeassistantapi.model.Prediction;
 import dev.artiz.financeassistantapi.model.Transaction;
