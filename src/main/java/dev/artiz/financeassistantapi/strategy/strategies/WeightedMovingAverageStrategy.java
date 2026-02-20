@@ -14,24 +14,34 @@ import java.util.Map;
 @Component
 public class WeightedMovingAverageStrategy implements PredictionStrategy {
 
+    private static final int WINDOW_SIZE = 6;
+
     @Override
     public PredictionDTO.Prediction predictNextMonth(Map<YearMonth, Double> monthlyData, TransactionCategory category) {
         List<Double> values = PredictionValidator.validateAndExtractValues(monthlyData, getModelName(), 3);
 
-        int n = values.size();
+        // We take the last N values to focus on the current financial behavior.
+        List<Double> windowedValues = values.size() > WINDOW_SIZE
+                ? values.subList(values.size() - WINDOW_SIZE, values.size())
+                : values;
+
+        int n = windowedValues.size();
         double weightedSum = 0;
         double weightTotal = 0;
 
-        // Calculate the weighted average (the prediction)
+        // Calculate WMA: Weights increase linearly (1, 2, 3... n)
+        // Recent data has the highest impact (weight n).
         for (int i = 0; i < n; i++) {
             double weight = i + 1;
-            weightedSum += values.get(i) * weight;
+            weightedSum += windowedValues.get(i) * weight;
             weightTotal += weight;
         }
+
         double prediction = weightedSum / weightTotal;
 
-        // Calculate dynamic model fit based on Weighted Variance
-        double modelFit = calculateWeightedFit(values, prediction, weightTotal);
+        // Calculate model fit using weighted variance.
+        // It measures how consistently the data follows the weighted mean.
+        double modelFit = calculateWeightedFit(windowedValues, prediction, weightTotal);
 
         return PredictionMapper.mapToDto(category, Math.max(0, prediction), modelFit);
     }
@@ -45,11 +55,11 @@ public class WeightedMovingAverageStrategy implements PredictionStrategy {
             weightedSumSquaredErrors += weight * Math.pow(values.get(i) - prediction, 2);
         }
 
+        // Weighted Variance = (sum of w_i * (y_i - y_hat)^2) / sum of weights
         double weightedVariance = weightedSumSquaredErrors / weightTotal;
         double weightedStandardDeviation = Math.sqrt(weightedVariance);
 
-        // Coefficient of Variation approach: 1 - (StDev / Mean)
-        // We cap it between 0 and 1
+        // Confidence score: 1 - CV (Coefficient of Variation)
         double fit = 1 - (weightedStandardDeviation / prediction);
         return Math.max(0, Math.min(1, fit));
     }

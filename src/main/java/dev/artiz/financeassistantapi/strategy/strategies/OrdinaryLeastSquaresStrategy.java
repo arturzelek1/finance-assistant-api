@@ -17,42 +17,41 @@ public class OrdinaryLeastSquaresStrategy implements PredictionStrategy {
     public PredictionDTO.Prediction predictNextMonth(Map<YearMonth, Double> monthlyData, TransactionCategory category) {
         List<Double> values = PredictionValidator.validateAndExtractValues(monthlyData, getModelName(), 3);
 
-
-        int months = values.size();
+        int n = values.size();
         double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
 
         // Accumulate statistics for the OLS estimation
-        for (int i = 0; i < months; i++) {
+        for (int i = 0; i < n; i++) {
             double y = values.get(i);
-
-            sumX += i;                 // Time index (independent variable)
-            sumY += y;                 // Amount (dependent variable)
-            sumXY += (double) i * y;   // Sum of X * Y
-            sumX2 += (double) i * i;   // Sum of X squared
+            sumX += i;                 // Independent variable (Time index)
+            sumY += y;                 // Dependent variable (Amount)
+            sumXY += (double) i * y;
+            sumX2 += (double) i * i;
         }
 
-        // Estimating beta parameters (Structural parameters of the model),
-        // beta1 (slope) represents the average change per period
-        double beta1 = (months * sumXY - sumX * sumY) / (months * sumX2 - sumX * sumX);
-        // beta0 (intercept) represents the starting value
-        double beta0 = (sumY - beta1 * sumX) / months;
+        // Calculate the slope (beta1) - represents the average change per month
+        // Formula: [n*sum(xy) - sum(x)*sum(y)] / [n*sum(x^2) - (sum(x))^2]
+        double denominator = (n * sumX2 - sumX * sumX);
+        double beta1 = (denominator == 0) ? 0 : (n * sumXY - sumX * sumY) / denominator;
 
-        // Calculate predicted value for the next time period (n)
-        double predictedValue = beta0 + beta1 * months;
-        // Calculate model fit
+        // Calculate the intercept (beta0) - represents the estimated starting value
+        // Formula: y_mean - beta1 * x_mean
+        double beta0 = (sumY - beta1 * sumX) / n;
+
+        // Forecast for the next period (index n)
+        // Y_hat = beta0 + beta1 * n
+        double predictedValue = beta0 + beta1 * n;
+
+        // R-Squared (Coefficient of Determination)
+        // Quantifies how much of the variance is explained by the linear trend.
         double rSquare = calculateRSquare(values, beta0, beta1);
 
-        return PredictionMapper.mapToDto(category, predictedValue, rSquare);
+        return PredictionMapper.mapToDto(category, Math.max(0, predictedValue), Math.max(0, rSquare));
     }
 
-    @Override
-    public String getModelName(){ return "OLS";}
-
-    //Calculates the R-Squared (Coefficient of Determination).
-    //It compares the variance explained by the model to the total variance in the data.
     private double calculateRSquare(List<Double> monthlyValues, double beta0, double beta1) {
-        double ssRes = 0; // Residual Sum of Squares (SSE)
-        double ssTot = 0; // Total Sum of Squares (SST)
+        double ssRes = 0; // Residual Sum of Squares (variation not explained by the model)
+        double ssTot = 0; // Total Sum of Squares (total variation in the data)
         double meanY = monthlyValues.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
 
         for (int i = 0; i < monthlyValues.size(); i++) {
@@ -63,7 +62,11 @@ public class OrdinaryLeastSquaresStrategy implements PredictionStrategy {
             ssTot += Math.pow(actual - meanY, 2);
         }
 
-        // Return 0 if the total variance is 0 to avoid division by zero
         return ssTot == 0 ? 0 : 1 - (ssRes / ssTot);
+    }
+
+    @Override
+    public String getModelName() {
+        return "OLS";
     }
 }

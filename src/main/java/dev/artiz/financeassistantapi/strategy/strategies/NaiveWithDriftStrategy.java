@@ -19,30 +19,38 @@ public class NaiveWithDriftStrategy implements PredictionStrategy {
         List<Double> values = PredictionValidator.validateAndExtractValues(monthlyData, getModelName(), 3);
 
         int n = values.size();
-
         double firstValue = values.getFirst();
         double lastValue = values.get(n - 1);
 
-        // Calculate the 'Drift' (average change per month)
-        // Formula: (Last - First) / (Number of Intervals)
-        double averageChange = (lastValue - firstValue) / (n - 1);
+        // Drift calculation: represents the average change per month over the entire period.
+        // Mathematical formula: (Y_t - Y_1) / (t - 1)
+        double drift = (lastValue - firstValue) / (n - 1);
 
-        // Prediction: Last observed value + 1 step of drift
-        double predictedValue = lastValue + averageChange;
+        // Prediction: Extending the line from the last observed value by one step of drift.
+        double predictedValue = lastValue + drift;
 
-        // Model Fit: In drift models, we can measure how much the drift
-        // actually explains the variance, but here we use a simplified confidence
-        // score that rewards longer history.
-        double modelFit = calculateConfidence(n);
+        // Model Fit: Calculate Mean Absolute Percentage Error (MAPE) equivalent
+        // to see how well the drift line represents the actual data points.
+        double modelFit = calculateDriftStability(values, drift);
 
         return PredictionMapper.mapToDto(category, Math.max(0, predictedValue), modelFit);
     }
 
-    private double calculateConfidence(int n) {
-        // Drift is more reliable over long periods
-        if (n >= 12) return 0.70;
-        if (n >= 6) return 0.50;
-        return 0.30;
+    private double calculateDriftStability(List<Double> values, double drift) {
+        int n = values.size();
+        double firstValue = values.getFirst();
+        double totalError = 0;
+        double totalMagnitude = 0;
+
+        for (int i = 0; i < n; i++) {
+            // Theoretical value at this step if the drift was perfectly constant
+            double expectedValue = firstValue + (i * drift);
+            totalError += Math.abs(values.get(i) - expectedValue);
+            totalMagnitude += Math.abs(values.get(i));
+        }
+
+        // Return a score between 0 and 1
+        return totalMagnitude == 0 ? 0 : Math.max(0, 1 - (totalError / totalMagnitude));
     }
 
     @Override
