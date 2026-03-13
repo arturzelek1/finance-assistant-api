@@ -30,6 +30,7 @@ public class Prediction implements Serializable {
     private LocalDateTime targetDate;
     private Double confidenceLevel;
     private Double modelFit;
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @PrePersist
@@ -90,5 +91,3 @@ public class Prediction implements Serializable {
 //        }
 //    }
 }
-
-

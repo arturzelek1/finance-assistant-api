@@ -1,8 +1,6 @@
 package dev.artiz.financeassistantapi.controller;
 
 import dev.artiz.financeassistantapi.dto.PredictionDTO;
-import dev.artiz.financeassistantapi.model.Transaction;
-import dev.artiz.financeassistantapi.model.TransactionCategory;
 import dev.artiz.financeassistantapi.service.PredictionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
