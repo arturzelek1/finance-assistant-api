@@ -16,11 +16,12 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
 
     @CacheEvict(value = "transactions", allEntries = true)
-    public TransactionDTO.Get create(TransactionDTO.Create request) {
+    public TransactionDTO.Get create(TransactionDTO.Create request, String userId) {
         Transaction transaction = Transaction.builder()
                 .description(request.description())
                 .amount(request.amount())
                 .category(request.category())
+                .userId(userId)
                 .build();
 
         Transaction saved = transactionRepository.save(transaction);

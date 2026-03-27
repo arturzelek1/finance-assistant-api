@@ -29,6 +29,7 @@ public class Transaction implements Serializable {
     @Enumerated(EnumType.STRING)
     private TransactionCategory category;
     private LocalDateTime createdAt;
+    private String userId;
 
     @PrePersist
     protected void onCreate() {
