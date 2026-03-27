@@ -5,6 +5,8 @@ import dev.artiz.financeassistantapi.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,8 +18,13 @@ public class TransactionsController {
     private final TransactionService transactionService;
 
     @PostMapping
-    public ResponseEntity<TransactionDTO.Get> createTransaction(@Valid @RequestBody TransactionDTO.Create request) {
-        return ResponseEntity.status(201).body(transactionService.create(request));
+    public ResponseEntity<TransactionDTO.Get> createTransaction(
+        @Valid @RequestBody TransactionDTO.Create request,
+        @AuthenticationPrincipal Jwt jwt
+    ) {
+        String userId = jwt.getSubject();
+
+        return ResponseEntity.status(201).body(transactionService.create(request, userId));
     }
 
     @GetMapping
