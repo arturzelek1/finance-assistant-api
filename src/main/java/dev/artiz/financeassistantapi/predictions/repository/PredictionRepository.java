@@ -1,4 +1,4 @@
-package dev.artiz.financeassistantapi.repository;
+package dev.artiz.financeassistantapi.predictions.repository;
 
 import dev.artiz.financeassistantapi.predictions.model.Prediction;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -3,10 +3,11 @@ package dev.artiz.financeassistantapi.predictions;
 import dev.artiz.financeassistantapi.exception.InsufficientDataException;
 import dev.artiz.financeassistantapi.predictions.dto.PredictionDTO;
 import dev.artiz.financeassistantapi.predictions.model.Prediction;
-import dev.artiz.financeassistantapi.repository.PredictionRepository;
-import dev.artiz.financeassistantapi.repository.TransactionRepository;
+import dev.artiz.financeassistantapi.predictions.repository.Predictio
 import dev.artiz.financeassistantapi.transactions.model.Transaction;
 import dev.artiz.financeassistantapi.transactions.model.TransactionCategory;
+import dev.artiz.financeassistantapi.transactions.repository.TransactionRepository;
+
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;

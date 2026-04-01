@@ -1,4 +1,4 @@
-package dev.artiz.financeassistantapi.repository;
+package dev.artiz.financeassistantapi.transactions.repository;
 
 import dev.artiz.financeassistantapi.transactions.model.Transaction;
 import dev.artiz.financeassistantapi.transactions.model.TransactionCategory;
