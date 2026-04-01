@@ -1,30 +1,40 @@
-package dev.artiz.financeassistantapi.strategy.strategies;
+package dev.artiz.financeassistantapi.predictions.strategies;
 
-import dev.artiz.financeassistantapi.dto.PredictionDTO;
-import dev.artiz.financeassistantapi.strategy.PredictionStrategy;
-import dev.artiz.financeassistantapi.model.TransactionCategory;
-import dev.artiz.financeassistantapi.mappers.PredictionMapper;
-import dev.artiz.financeassistantapi.utils.PredictionValidator;
-import org.springframework.stereotype.Component;
-
+import dev.artiz.financeassistantapi.predictions.PredictionStrategy;
+import dev.artiz.financeassistantapi.predictions.dto.PredictionDTO;
+import dev.artiz.financeassistantapi.predictions.mappers.PredictionMapper;
+import dev.artiz.financeassistantapi.predictions.utils.PredictionValidator;
+import dev.artiz.financeassistantapi.transactions.model.TransactionCategory;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import org.springframework.stereotype.Component;
 
 @Component
 public class OrdinaryLeastSquaresStrategy implements PredictionStrategy {
+
     @Override
-    public PredictionDTO.Prediction predictNextMonth(Map<YearMonth, Double> monthlyData, TransactionCategory category) {
-        List<Double> values = PredictionValidator.validateAndExtractValues(monthlyData, getModelName(), 3);
+    public PredictionDTO.Prediction predictNextMonth(
+        Map<YearMonth, Double> monthlyData,
+        TransactionCategory category
+    ) {
+        List<Double> values = PredictionValidator.validateAndExtractValues(
+            monthlyData,
+            getModelName(),
+            3
+        );
 
         int n = values.size();
-        double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        double sumX = 0,
+            sumY = 0,
+            sumXY = 0,
+            sumX2 = 0;
 
         // Accumulate statistics for the OLS estimation
         for (int i = 0; i < n; i++) {
             double y = values.get(i);
-            sumX += i;                 // Independent variable (Time index)
-            sumY += y;                 // Dependent variable (Amount)
+            sumX += i; // Independent variable (Time index)
+            sumY += y; // Dependent variable (Amount)
             sumXY += (double) i * y;
             sumX2 += (double) i * i;
         }
@@ -32,7 +42,9 @@ public class OrdinaryLeastSquaresStrategy implements PredictionStrategy {
         // Calculate the slope (beta1) - represents the average change per month
         // Formula: [n*sum(xy) - sum(x)*sum(y)] / [n*sum(x^2) - (sum(x))^2]
         double denominator = (n * sumX2 - sumX * sumX);
-        double beta1 = (denominator == 0) ? 0 : (n * sumXY - sumX * sumY) / denominator;
+        double beta1 = (denominator == 0)
+            ? 0
+            : (n * sumXY - sumX * sumY) / denominator;
 
         // Calculate the intercept (beta0) - represents the estimated starting value
         // Formula: y_mean - beta1 * x_mean
@@ -46,13 +58,25 @@ public class OrdinaryLeastSquaresStrategy implements PredictionStrategy {
         // Quantifies how much of the variance is explained by the linear trend.
         double rSquare = calculateRSquare(values, beta0, beta1);
 
-        return PredictionMapper.mapToDto(category, Math.max(0, predictedValue), Math.max(0, rSquare));
+        return PredictionMapper.mapToDto(
+            category,
+            Math.max(0, predictedValue),
+            Math.max(0, rSquare)
+        );
     }
 
-    private double calculateRSquare(List<Double> monthlyValues, double beta0, double beta1) {
+    private double calculateRSquare(
+        List<Double> monthlyValues,
+        double beta0,
+        double beta1
+    ) {
         double ssRes = 0; // Residual Sum of Squares (variation not explained by the model)
         double ssTot = 0; // Total Sum of Squares (total variation in the data)
-        double meanY = monthlyValues.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        double meanY = monthlyValues
+            .stream()
+            .mapToDouble(Double::doubleValue)
+            .average()
+            .orElse(0.0);
 
         for (int i = 0; i < monthlyValues.size(); i++) {
             double predicted = beta0 + beta1 * i;

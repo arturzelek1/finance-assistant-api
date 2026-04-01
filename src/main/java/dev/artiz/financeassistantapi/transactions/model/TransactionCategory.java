@@ -1,4 +1,4 @@
-package dev.artiz.financeassistantapi.model;
+package dev.artiz.financeassistantapi.transactions.model;
 
 public enum TransactionCategory {
     FOOD,
@@ -6,5 +6,5 @@ public enum TransactionCategory {
     ENTERTAINMENT,
     UTILITIES,
     SALARY,
-    OTHER
+    OTHER,
 }

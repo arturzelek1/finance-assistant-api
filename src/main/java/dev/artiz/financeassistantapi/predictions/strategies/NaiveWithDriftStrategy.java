@@ -1,22 +1,28 @@
-package dev.artiz.financeassistantapi.strategy.strategies;
+package dev.artiz.financeassistantapi.predictions.strategies;
 
-import dev.artiz.financeassistantapi.dto.PredictionDTO;
-import dev.artiz.financeassistantapi.mappers.PredictionMapper;
-import dev.artiz.financeassistantapi.model.TransactionCategory;
-import dev.artiz.financeassistantapi.strategy.PredictionStrategy;
-import dev.artiz.financeassistantapi.utils.PredictionValidator;
-import org.springframework.stereotype.Component;
-
+import dev.artiz.financeassistantapi.predictions.PredictionStrategy;
+import dev.artiz.financeassistantapi.predictions.dto.PredictionDTO;
+import dev.artiz.financeassistantapi.predictions.mappers.PredictionMapper;
+import dev.artiz.financeassistantapi.predictions.utils.PredictionValidator;
+import dev.artiz.financeassistantapi.transactions.model.TransactionCategory;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import org.springframework.stereotype.Component;
 
 @Component
 public class NaiveWithDriftStrategy implements PredictionStrategy {
 
     @Override
-    public PredictionDTO.Prediction predictNextMonth(Map<YearMonth, Double> monthlyData, TransactionCategory category) {
-        List<Double> values = PredictionValidator.validateAndExtractValues(monthlyData, getModelName(), 3);
+    public PredictionDTO.Prediction predictNextMonth(
+        Map<YearMonth, Double> monthlyData,
+        TransactionCategory category
+    ) {
+        List<Double> values = PredictionValidator.validateAndExtractValues(
+            monthlyData,
+            getModelName(),
+            3
+        );
 
         int n = values.size();
         double firstValue = values.getFirst();
@@ -33,7 +39,11 @@ public class NaiveWithDriftStrategy implements PredictionStrategy {
         // to see how well the drift line represents the actual data points.
         double modelFit = calculateDriftStability(values, drift);
 
-        return PredictionMapper.mapToDto(category, Math.max(0, predictedValue), modelFit);
+        return PredictionMapper.mapToDto(
+            category,
+            Math.max(0, predictedValue),
+            modelFit
+        );
     }
 
     private double calculateDriftStability(List<Double> values, double drift) {
@@ -50,7 +60,9 @@ public class NaiveWithDriftStrategy implements PredictionStrategy {
         }
 
         // Return a score between 0 and 1
-        return totalMagnitude == 0 ? 0 : Math.max(0, 1 - (totalError / totalMagnitude));
+        return totalMagnitude == 0
+            ? 0
+            : Math.max(0, 1 - (totalError / totalMagnitude));
     }
 
     @Override

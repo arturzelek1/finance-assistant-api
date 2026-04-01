@@ -27,11 +27,11 @@ public class KeycloakAdminConfig {
     @Bean
     public Keycloak keycloak() {
         return KeycloakBuilder.builder()
-                .serverUrl(serverUrl)
-                .realm(realm)
-                .clientId(clientId)
-                .username(username)
-                .password(password)
-                .build();
+            .serverUrl(serverUrl)
+            .realm(realm)
+            .clientId(clientId)
+            .username(username)
+            .password(password)
+            .build();
     }
 }

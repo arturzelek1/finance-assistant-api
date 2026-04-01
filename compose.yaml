@@ -1,13 +1,13 @@
 services:
   postgres:
-    image: 'postgres:16-alpine'
-    container_name: 'postgres'
+    image: "postgres:16-alpine"
+    container_name: "postgres"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_pass
       POSTGRES_DB: keycloak_db
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./kc_db_init.sh:/docker-entrypoint-initdb.d/kc_db_init.sh
@@ -18,10 +18,10 @@ services:
       retries: 10
 
   redis:
-    image: 'redis:7-alpine'
-    container_name: 'redis'
+    image: "redis:7-alpine"
+    container_name: "redis"
     ports:
-      - '6379:6379'
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -30,7 +30,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.5.0
-    container_name: 'keycloak'
+    container_name: "keycloak"
     command: start-dev
     environment:
       KEYCLOAK_ADMIN: admin
@@ -42,7 +42,7 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
     ports:
-      - '8080:8080'
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
