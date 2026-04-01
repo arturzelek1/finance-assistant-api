@@ -1,31 +1,41 @@
-package dev.artiz.financeassistantapi.strategy.strategies;
+package dev.artiz.financeassistantapi.predictions.strategies;
 
-import dev.artiz.financeassistantapi.dto.PredictionDTO;
-import dev.artiz.financeassistantapi.mappers.PredictionMapper;
-import dev.artiz.financeassistantapi.model.TransactionCategory;
-import dev.artiz.financeassistantapi.strategy.PredictionStrategy;
-import dev.artiz.financeassistantapi.utils.PredictionValidator;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
+import dev.artiz.financeassistantapi.predictions.PredictionStrategy;
+import dev.artiz.financeassistantapi.predictions.dto.PredictionDTO;
+import dev.artiz.financeassistantapi.predictions.mappers.PredictionMapper;
+import dev.artiz.financeassistantapi.predictions.utils.PredictionValidator;
+import dev.artiz.financeassistantapi.transactions.model.TransactionCategory;
 import java.time.YearMonth;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 public class SeasonalPersistenceStrategy implements PredictionStrategy {
 
     @Override
-    public PredictionDTO.Prediction predictNextMonth(Map<YearMonth, Double> monthlyData, TransactionCategory category) {
-        PredictionValidator.validateAndExtractValues(monthlyData, getModelName(), 1);
+    public PredictionDTO.Prediction predictNextMonth(
+        Map<YearMonth, Double> monthlyData,
+        TransactionCategory category
+    ) {
+        PredictionValidator.validateAndExtractValues(
+            monthlyData,
+            getModelName(),
+            1
+        );
 
         YearMonth nextMonth = YearMonth.now().plusMonths(1);
         YearMonth targetMonthLastYear = nextMonth.minusYears(1);
 
         // Check if the specific seasonal reference point exists
         if (!monthlyData.containsKey(targetMonthLastYear)) {
-            log.warn("Strategy {} failed for category {}: Missing historical data for seasonal reference: {}",
-                    getModelName(), category, targetMonthLastYear);
+            log.warn(
+                "Strategy {} failed for category {}: Missing historical data for seasonal reference: {}",
+                getModelName(),
+                category,
+                targetMonthLastYear
+            );
             // In a Master's project, returning 0 fit/confidence is better than crashing
             return PredictionMapper.mapToDto(category, 0.0, 0.0);
         }
@@ -34,9 +44,17 @@ public class SeasonalPersistenceStrategy implements PredictionStrategy {
 
         // Calculate model fit based on overall data variance and depth
         // A seasonal model is more reliable when the historical data isn't chaotic
-        double modelFit = calculateSeasonalConfidence(monthlyData, predictedValue);
+        double modelFit = calculateSeasonalConfidence(
+            monthlyData,
+            predictedValue
+        );
 
-        log.debug("Seasonal Prediction for {}: {} (based on {})", nextMonth, predictedValue, targetMonthLastYear);
+        log.debug(
+            "Seasonal Prediction for {}: {} (based on {})",
+            nextMonth,
+            predictedValue,
+            targetMonthLastYear
+        );
 
         return PredictionMapper.mapToDto(category, predictedValue, modelFit);
     }
@@ -46,7 +64,10 @@ public class SeasonalPersistenceStrategy implements PredictionStrategy {
      * Seasonal patterns require at least 13 months to even exist,
      * and 24+ months to be verified across multiple cycles.
      */
-    private double calculateSeasonalConfidence(Map<YearMonth, Double> monthlyData, double predictedValue) {
+    private double calculateSeasonalConfidence(
+        Map<YearMonth, Double> monthlyData,
+        double predictedValue
+    ) {
         int n = monthlyData.size();
         if (n < 12) return 0.0;
 

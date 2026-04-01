@@ -8,5 +8,6 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "app")
 @Data
 public class AppConfig {
+
     private String environment;
 }

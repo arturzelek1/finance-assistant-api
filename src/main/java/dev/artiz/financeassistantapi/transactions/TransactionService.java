@@ -1,28 +1,31 @@
-package dev.artiz.financeassistantapi.service;
+package dev.artiz.financeassistantapi.transactions;
 
-import dev.artiz.financeassistantapi.dto.TransactionDTO;
-import dev.artiz.financeassistantapi.model.Transaction;
-import dev.artiz.financeassistantapi.repository.TransactionRepository;
+import dev.artiz.financeassistantapi.transactions.dto.TransactionDTO;
+import dev.artiz.financeassistantapi.transactions.model.Transaction;
+import dev.artiz.financeassistantapi.transactions.repository.TransactionRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
+
     private final TransactionRepository transactionRepository;
 
     @CacheEvict(value = "transactions", allEntries = true)
-    public TransactionDTO.Get create(TransactionDTO.Create request, String userId) {
+    public TransactionDTO.Get create(
+        TransactionDTO.Create request,
+        String userId
+    ) {
         Transaction transaction = Transaction.builder()
-                .description(request.description())
-                .amount(request.amount())
-                .category(request.category())
-                .userId(userId)
-                .build();
+            .description(request.description())
+            .amount(request.amount())
+            .category(request.category())
+            .userId(userId)
+            .build();
 
         Transaction saved = transactionRepository.save(transaction);
 
@@ -31,9 +34,11 @@ public class TransactionService {
 
     @Cacheable(value = "transactions")
     public List<TransactionDTO.Get> getTransactions() {
-        return transactionRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .toList();
+        return transactionRepository
+            .findAll()
+            .stream()
+            .map(this::mapToResponse)
+            .toList();
     }
 
     @CacheEvict(value = "transactions", allEntries = true)
@@ -47,10 +52,10 @@ public class TransactionService {
 
     private TransactionDTO.Get mapToResponse(Transaction t) {
         return new TransactionDTO.Get(
-                t.getId(),
-                t.getDescription(),
-                t.getAmount(),
-                t.getCreatedAt()
+            t.getId(),
+            t.getDescription(),
+            t.getAmount(),
+            t.getCreatedAt()
         );
     }
 }

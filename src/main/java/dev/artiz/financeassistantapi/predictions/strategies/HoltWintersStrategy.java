@@ -1,16 +1,15 @@
-package dev.artiz.financeassistantapi.strategy.strategies;
+package dev.artiz.financeassistantapi.predictions.strategies;
 
-import dev.artiz.financeassistantapi.dto.PredictionDTO;
-import dev.artiz.financeassistantapi.strategy.PredictionStrategy;
-import dev.artiz.financeassistantapi.model.TransactionCategory;
-import dev.artiz.financeassistantapi.mappers.PredictionMapper;
-import dev.artiz.financeassistantapi.utils.PredictionValidator;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
+import dev.artiz.financeassistantapi.predictions.PredictionStrategy;
+import dev.artiz.financeassistantapi.predictions.dto.PredictionDTO;
+import dev.artiz.financeassistantapi.predictions.mappers.PredictionMapper;
+import dev.artiz.financeassistantapi.predictions.utils.PredictionValidator;
+import dev.artiz.financeassistantapi.transactions.model.TransactionCategory;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 @Component
 public class HoltWintersStrategy implements PredictionStrategy {
@@ -22,9 +21,16 @@ public class HoltWintersStrategy implements PredictionStrategy {
     private double beta;
 
     @Override
-    public PredictionDTO.Prediction predictNextMonth(Map<YearMonth, Double> monthlyData, TransactionCategory category) {
+    public PredictionDTO.Prediction predictNextMonth(
+        Map<YearMonth, Double> monthlyData,
+        TransactionCategory category
+    ) {
         // Validation: Holt-Winters requires at least 3 data points to initialize level and trend components.
-        List<Double> values = PredictionValidator.validateAndExtractValues(monthlyData, getModelName(), 3);
+        List<Double> values = PredictionValidator.validateAndExtractValues(
+            monthlyData,
+            getModelName(),
+            3
+        );
 
         int n = values.size();
 
@@ -36,8 +42,15 @@ public class HoltWintersStrategy implements PredictionStrategy {
 
         // Statistics for calculating the Coefficient of Determination (R-squared)
         double sumSquaredErrors = 0;
-        double meanY = values.stream().mapToDouble(v -> v).average().orElse(0);
-        double sumTotalSquares = values.stream().mapToDouble(v -> Math.pow(v - meanY, 2)).sum();
+        double meanY = values
+            .stream()
+            .mapToDouble(v -> v)
+            .average()
+            .orElse(0);
+        double sumTotalSquares = values
+            .stream()
+            .mapToDouble(v -> Math.pow(v - meanY, 2))
+            .sum();
 
         // Recursive smoothing process (Holt's Linear Trend Algorithm)
         for (int i = 1; i < n; i++) {
@@ -61,7 +74,10 @@ public class HoltWintersStrategy implements PredictionStrategy {
 
         // Model Fit Calculation (R-squared equivalent).
         // A value of 1.0 indicates a perfect fit with historical data.
-        double modelFit = sumTotalSquares == 0 ? 0 : Math.max(0, 1 - (sumSquaredErrors / sumTotalSquares));
+        double modelFit =
+            sumTotalSquares == 0
+                ? 0
+                : Math.max(0, 1 - (sumSquaredErrors / sumTotalSquares));
 
         return PredictionMapper.mapToDto(category, predictedValue, modelFit);
     }

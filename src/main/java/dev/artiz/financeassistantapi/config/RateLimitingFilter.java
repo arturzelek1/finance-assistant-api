@@ -7,14 +7,13 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
@@ -23,15 +22,21 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     private Bucket createNewBucket() {
         return Bucket.builder()
-                .addLimit(Bandwidth.classic(5, Refill.intervally(5, Duration.ofMinutes(1))))
-                .build();
+            .addLimit(
+                Bandwidth.classic(
+                    5,
+                    Refill.intervally(5, Duration.ofMinutes(1))
+                )
+            )
+            .build();
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
-
+    protected void doFilterInternal(
+        @NonNull HttpServletRequest request,
+        @NonNull HttpServletResponse response,
+        @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
         String path = request.getRequestURI();
 
         if (!path.startsWith("/api/v1/predictions")) {
@@ -49,9 +54,14 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
     }
 
-    private void sendErrorResponse(HttpServletResponse response) throws IOException {
+    private void sendErrorResponse(HttpServletResponse response)
+        throws IOException {
         response.setStatus(429);
         response.setContentType("application/json");
-        response.getWriter().write("{\"error\": \"Too many requests. Please slow down. Prediction is expensive!\"}");
+        response
+            .getWriter()
+            .write(
+                "{\"error\": \"Too many requests. Please slow down. Prediction is expensive!\"}"
+            );
     }
 }
