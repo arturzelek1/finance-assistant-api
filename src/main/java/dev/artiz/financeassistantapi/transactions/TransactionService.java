@@ -3,11 +3,13 @@ package dev.artiz.financeassistantapi.transactions;
 import dev.artiz.financeassistantapi.transactions.dto.TransactionDTO;
 import dev.artiz.financeassistantapi.transactions.model.Transaction;
 import dev.artiz.financeassistantapi.transactions.repository.TransactionRepository;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor
@@ -16,38 +18,54 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
 
     @CacheEvict(value = "transactions", allEntries = true)
-    public TransactionDTO.Get create(
+    public Mono<TransactionDTO.Get> create(
         TransactionDTO.Create request,
         String userId
     ) {
-        Transaction transaction = Transaction.builder()
-            .description(request.description())
-            .amount(request.amount())
-            .category(request.category())
-            .userId(userId)
-            .build();
+        return Mono
+            .fromCallable(() -> {
+                Transaction transaction = Transaction.builder()
+                    .description(request.description())
+                    .amount(request.amount())
+                    .category(request.category())
+                    .userId(userId)
+                    .build();
 
-        Transaction saved = transactionRepository.save(transaction);
+                Transaction saved = transactionRepository.save(transaction);
 
-        return mapToResponse(saved);
+                return mapToResponse(saved);
+            })
+            .subscribeOn(Schedulers.boundedElastic());
     }
 
     @Cacheable(value = "transactions")
-    public List<TransactionDTO.Get> getTransactions() {
-        return transactionRepository
-            .findAll()
-            .stream()
-            .map(this::mapToResponse)
-            .toList();
+    public Flux<TransactionDTO.Get> getTransactions() {
+        return Mono
+            .fromCallable(() ->
+                transactionRepository
+                    .findAll()
+                    .stream()
+                    .map(this::mapToResponse)
+                    .toList()
+            )
+            .subscribeOn(Schedulers.boundedElastic())
+            .flatMapMany(Flux::fromIterable);
     }
 
     @CacheEvict(value = "transactions", allEntries = true)
-    public void delete(Long id) {
-        if (!transactionRepository.existsById(id)) {
-            throw new RuntimeException("Transaction not found with id: " + id);
-        }
+    public Mono<Void> delete(Long id) {
+        return Mono
+            .fromRunnable(() -> {
+                if (!transactionRepository.existsById(id)) {
+                    throw new RuntimeException(
+                        "Transaction not found with id: " + id
+                    );
+                }
 
-        transactionRepository.deleteById(id);
+                transactionRepository.deleteById(id);
+            })
+            .subscribeOn(Schedulers.boundedElastic())
+            .then();
     }
 
     private TransactionDTO.Get mapToResponse(Transaction t) {

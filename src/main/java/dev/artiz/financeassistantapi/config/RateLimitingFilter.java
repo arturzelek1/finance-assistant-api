@@ -3,20 +3,24 @@ package dev.artiz.financeassistantapi.config;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
 @Component
-public class RateLimitingFilter extends OncePerRequestFilter {
+public class RateLimitingFilter implements WebFilter {
+
+    private static final String LIMIT_RESPONSE =
+        "{\"error\": \"Too many requests. Please slow down. Prediction is expensive!\"}";
 
     private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
 
@@ -32,36 +36,43 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(
-        @NonNull HttpServletRequest request,
-        @NonNull HttpServletResponse response,
-        @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        String path = request.getRequestURI();
+    public Mono<Void> filter(
+        ServerWebExchange exchange,
+        WebFilterChain chain
+    ) {
+        String path = exchange.getRequest().getPath().pathWithinApplication()
+            .value();
 
         if (!path.startsWith("/api/v1/predictions")) {
-            filterChain.doFilter(request, response);
-            return;
+            return chain.filter(exchange);
         }
 
-        String key = request.getRemoteAddr();
+        String key = Optional
+            .ofNullable(exchange.getRequest().getRemoteAddress())
+            .map(address ->
+                address.getAddress() != null
+                    ? address.getAddress().getHostAddress()
+                    : address.getHostString()
+            )
+            .orElse("unknown");
         Bucket bucket = cache.computeIfAbsent(key, k -> createNewBucket());
 
         if (bucket.tryConsume(1)) {
-            filterChain.doFilter(request, response);
-        } else {
-            sendErrorResponse(response);
+            return chain.filter(exchange);
         }
+
+        return sendErrorResponse(exchange);
     }
 
-    private void sendErrorResponse(HttpServletResponse response)
-        throws IOException {
-        response.setStatus(429);
-        response.setContentType("application/json");
-        response
-            .getWriter()
-            .write(
-                "{\"error\": \"Too many requests. Please slow down. Prediction is expensive!\"}"
-            );
+    private Mono<Void> sendErrorResponse(ServerWebExchange exchange) {
+        var response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        DataBuffer buffer = response
+            .bufferFactory()
+            .wrap(LIMIT_RESPONSE.getBytes());
+
+        return response.writeWith(Mono.just(buffer));
     }
 }

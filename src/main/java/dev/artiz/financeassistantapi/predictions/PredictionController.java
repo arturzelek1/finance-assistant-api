@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/predictions")
@@ -14,11 +15,11 @@ public class PredictionController {
     private final PredictionService predictionService;
 
     @PostMapping("/next-month")
-    public ResponseEntity<PredictionDTO.Prediction> predictNextMonth(
+    public Mono<ResponseEntity<PredictionDTO.Prediction>> predictNextMonth(
         @Valid @RequestBody PredictionDTO.PredictionRequest request
     ) {
-        return ResponseEntity.ok(
-            predictionService.predictNextMonth(request.category())
-        );
+        return predictionService
+            .predictNextMonth(request.category())
+            .map(ResponseEntity::ok);
     }
 }

@@ -2,12 +2,13 @@ package dev.artiz.financeassistantapi.transactions;
 
 import dev.artiz.financeassistantapi.transactions.dto.TransactionDTO;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -17,27 +18,26 @@ public class TransactionsController {
     private final TransactionService transactionService;
 
     @PostMapping
-    public ResponseEntity<TransactionDTO.Get> createTransaction(
+    public Mono<ResponseEntity<TransactionDTO.Get>> createTransaction(
         @Valid @RequestBody TransactionDTO.Create request,
         @AuthenticationPrincipal Jwt jwt
     ) {
         String userId = jwt.getSubject();
 
-        return ResponseEntity.status(201).body(
-            transactionService.create(request, userId)
-        );
+        return transactionService
+            .create(request, userId)
+            .map(saved -> ResponseEntity.status(201).body(saved));
     }
 
     @GetMapping
-    public ResponseEntity<List<TransactionDTO.Get>> getTransactions() {
-        return ResponseEntity.ok(transactionService.getTransactions());
+    public Flux<TransactionDTO.Get> getTransactions() {
+        return transactionService.getTransactions();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<TransactionDTO.Get> deleteTransaction(
-        @PathVariable Long id
-    ) {
-        transactionService.delete(id);
-        return ResponseEntity.status(204).build();
+    public Mono<ResponseEntity<Void>> deleteTransaction(@PathVariable Long id) {
+        return transactionService
+            .delete(id)
+            .thenReturn(ResponseEntity.noContent().build());
     }
 }

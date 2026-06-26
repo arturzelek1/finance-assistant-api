@@ -14,7 +14,9 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @Service
@@ -24,9 +26,21 @@ public class PredictionService {
     private final TransactionRepository transactionRepository;
     private final PredictionRepository predictionRepository;
     private final List<PredictionStrategy> strategies;
+    private final TransactionOperations transactionOperations;
 
-    @Transactional
-    public PredictionDTO.Prediction predictNextMonth(
+    public Mono<PredictionDTO.Prediction> predictNextMonth(
+        TransactionCategory category
+    ) {
+        return Mono
+            .fromCallable(() ->
+                transactionOperations.execute(status ->
+                    predictNextMonthBlocking(category)
+                )
+            )
+            .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private PredictionDTO.Prediction predictNextMonthBlocking(
         TransactionCategory category
     ) {
         List<Transaction> history =
